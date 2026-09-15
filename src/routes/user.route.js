@@ -11,7 +11,7 @@ const patternUsers = {
 
 
 
-userRoute.post(patternUsers.SIGNUP, userController.signup)
+userRoute.post(patternUsers.SIGNUP, userController.signUp)
 userRoute.post(patternUsers.LOGIN, userController.login)
 
 

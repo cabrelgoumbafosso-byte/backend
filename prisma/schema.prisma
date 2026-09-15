@@ -6,10 +6,102 @@
 
 generator client {
   provider = "prisma-client-js"
-  output   = "/generated/prisma"
+  output   = "../generated/prisma"
 }
 
 datasource db {
   provider = "mongodb"
   url      = env("DATABASE_URL")
+}
+
+enum Role {
+  CITOYEN
+  GREFFIER
+  PROCUREUR
+  ADMIN
+}
+enum StatutDemande {
+  SOUMISE
+  EN_VERIFICATION
+  REJETEE
+  EN_ATTENTE_GREFFIER
+  EN_ATTENTE_PROCUREUR
+  VALIDEE
+  DELIVREE
+}
+enum TypeBulletin{
+  BULLETIN_3
+}
+
+
+model Users {
+   id                String @id @default(uuid()) @map("_id")
+   nom               String
+   prenom            String
+   email             String @unique
+   motDePasse        String
+   telephone         String?
+   role              Role @default(CITOYEN)
+   refreshToken      String?
+
+   createdAt         DateTime @default(now())
+
+   signatureUrl      String?
+   cachetUrl         String?
+   tribunal          String?
+
+
+   demandes          Demande[] @relation("Demandeur")
+   demandesTraitees  Demande[] @relation("TraiteurGref")
+   demandesTraiteesProc Demande[] @relation("TraiteurProcur")
+}
+
+
+model Demande {
+     id                       String @id @default(uuid()) @map("_id")
+     numeroDemande            String @unique
+     typeBulletin             TypeBulletin @default(BULLETIN_3) 
+     statutDemande            StatutDemande @default(SOUMISE)
+     motif                    String? 
+
+     nom                      String
+     prenom                   String
+     dateNaisssance           DateTime
+     lieuNaissance            String
+     nomPere                  String
+     nomMere                  String
+     profession               String
+     situationMatrimonial     String
+     domicile                 String
+     nationalite              String @default("Camerounaise")
+
+
+
+     userId                   String
+     user                     Users @relation("Demandeur", fields: [userId], references: [id], onDelete:Cascade)
+
+     greffierId               String?
+     greffier                 Users? @relation("TraiteurGref", fields: [greffierId], references: [id])
+     dateSignatureGreffier    DateTime?
+
+
+     procureurId              String?
+     procureur                Users? @relation("TraiteurProcur", fields: [procureurId], references: [id])
+     dateSignatureProcureur   DateTime?  
+
+     pieces                   PiecesJointes[] 
+
+     creatAt                  DateTime @default(now())
+}
+
+model PiecesJointes {
+      id                       String @id @default(uuid()) @map("_id")
+      url                      String
+      type                     String //cni, actenaissance.. etc
+
+
+
+      demandeId                   String
+      demande                     Demande @relation(fields: [demandeId], references: [id], onDelete:Cascade)
+
 }
