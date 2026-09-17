@@ -3,11 +3,13 @@ import fs from 'fs'
 import path from "path";
 
 
-const UPLOAD_DIR = 'uploads/pieces_jointes';
+const UPLOAD_DIR = 'uploads/pieces_jointes'
 
 if (!fs.existsSync(UPLOAD_DIR)) {
     fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 }
+
+
 
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
@@ -26,9 +28,9 @@ const fileFilter = (req, file, cb) => {
     const mimetype = allowedTypes.test(file.mimetype);
 
     if (extname && mimetype) {
-        return cb(null, true);
+        return cb(null, true)
     } else {
-        cb(new Error('Format de fichier non supporté. Veuillez uploader un PDF, PNG ou JPG.'));
+        cb(new Error('Format de fichier non supporté. Veuillez uploader un PDF, PNG ou JPG.'))
     }
 };
 

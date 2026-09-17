@@ -68,7 +68,7 @@ const demandeControlleur = {
             return res.status(httpCode.OK).json({message: 'Consulter votre demande', myDemande})
 
         } catch (error) {
-                    return res.status(httpCode.INTERNAL_SERVER_ERROR).json({ message: error.message });
+                return res.status(httpCode.INTERNAL_SERVER_ERROR).json({ message: error.message });
         }
     },
 

@@ -14,9 +14,9 @@ const patternDemande = {
 
 
 demandeRoute.post(patternDemande.CREATE, authMiddleware, upload.fields([{name: 'cni', maxCount:1}, {name: 'acteNaissance', maxCount: 1}]), demandeControlleur.create)
-demandeRoute.post(patternDemande.MyDEMANDE, authMiddleware, demandeControlleur.getMyDemande)
+demandeRoute.get(patternDemande.MyDEMANDE, authMiddleware, demandeControlleur.getMyDemande)
 
 
-demandeRoute.post(patternDemande.ALLDEMANDE, authMiddleware, verifRole('GREFFIER', 'PROCUREUR', 'ADMIN'), demandeControlleur.getAllDemande)
+demandeRoute.get(patternDemande.ALLDEMANDE, authMiddleware, verifRole('GREFFIER', 'PROCUREUR', 'ADMIN'), demandeControlleur.getAllDemande)
 
 export default demandeRoute

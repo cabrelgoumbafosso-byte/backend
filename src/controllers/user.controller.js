@@ -22,15 +22,12 @@ const generateRefreshToken = (user)=>{
 }
 
 
-
-
-
 const userController = {
 
     signUp: async (req, res)=>{
 
       try {
-          const {nom, prenom, email, motDePasse, telephone } = req.body
+          const {nom, prenom, email, motDePasse, telephone, role } = req.body
 
         if (!nom || !email || !motDePasse || !telephone) {
             return res.status(httpCode.BAD_REQUEST).json({message: 'Tous les champs sont requis'})
@@ -48,7 +45,7 @@ const userController = {
         const newUser = await prisma.users.create({
             data: {
                 id: uuidv4(),
-                nom, prenom, email, motDePasse: hashPassword, telephone, role: 'CITOYEN'
+                nom, prenom, email, motDePasse: hashPassword, telephone, role: role
             }
         })
         
@@ -97,7 +94,146 @@ const userController = {
         } catch (error) {
             return res.status(httpCode.INTERNAL_SERVER_ERROR).json({ message: error.message });
         }
+    },
+
+    getUsers: async(req ,res)=>{
+        try {
+            const allUsers = await prisma.users.findMany({
+                orderBy: {createdAt: 'desc'},
+            })
+
+            if (!allUsers) {
+                return res.status(httpCode.NOT_FOUND).json({message: 'Aucun utilisateur enregistre'})
+            }
+            return res.status(httpCode.OK).json({message: 'Liste des Users', allUsers})
+
+        } catch (error) {
+            return res.status(httpCode.INTERNAL_SERVER_ERROR).json({ message: error.message });
+        }
+    },
+
+    refresh: async(req, res)=>{
+        try {
+            const {refreshToken} = req.body
+            if (!refreshToken) {
+                res.status(httpCode.BAD_REQUEST).json({message: 'Refresh token requis'})
+            }
+            const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET)
+            const user = await prisma.users.findUnique({where: {id: decoded.id}})
+            if (!user || user.refreshToken !== refreshToken) {
+               return res.status(httpCode.UNAUTHORIZED).json({message: 'Refresh token invalide ou expiré'})
+            }
+            const newAccessToken = generateAccessToken(user)
+
+            return res.status(httpCode.OK).json({message: 'Nouveau access token', accesToken: newAccessToken})
+
+
+        } catch (error) {
+            return res.status(httpCode.INTERNAL_SERVER_ERROR).json({ message: error.message });
+        }
+    },
+
+    createGreffier: async(req, res)=>{
+        try {
+            const {nom, prenom, email, motDePasse, telephone, role, tribunal} = req.body
+
+            if (!nom || !prenom || !email || !motDePasse || !telephone || !role || !tribunal) {
+                return res.status(httpCode.BAD_REQUEST).json({message: 'Tous les champs sont requis'})
+            }
+            const greffier = 'GREFFIER'
+
+            if (role.toUpperCase() !== greffier) {
+                return res.status(httpCode.BAD_REQUEST).json({message: 'Cette route est reserve a la creation des greffiers, verifiez le role'})
+            }
+
+            const emailExist = await prisma.users.findUnique({where: {email}})
+            if (emailExist) {
+                return res.status(httpCode.CONFLICT).json({message: 'Cette adresse mail est deja utilise'})
+            }
+            const hashPassword = await bcrypt.hash(motDePasse, 10)
+
+            const newGreffier = await prisma.users.create({
+                data: {
+                    id: uuidv4(),
+                    nom, prenom, email, motDePasse:hashPassword, telephone, tribunal,
+                    role : role.toUpperCase()
+                }
+            })
+            
+            return res.status(httpCode.CREATED).json({message: 'Greffier cree avec succes', newGreffier})
+
+        } catch (error) {
+            return res.status(httpCode.INTERNAL_SERVER_ERROR).json({ message: error.message });
+        }
+    },
+
+
+    createProcureur: async(req, res)=>{
+        try {
+            const {nom, prenom, email, motDePasse, telephone, role, tribunal} = req.body
+
+            if (!nom || !prenom || !email || !motDePasse || !telephone || !role || !tribunal) {
+                return res.status(httpCode.BAD_REQUEST).json({message: 'Tous les champs sont requis'})
+            }
+            const procureur = 'PROCUREUR'
+
+            if (role.toUpperCase() !== procureur) {
+                return res.status(httpCode.BAD_REQUEST).json({message: 'Cette route est reserve a la creation des procureurs, verifiez le role'})
+            }
+
+            const emailExist = await prisma.users.findUnique({where: {email}})
+            if (emailExist) {
+                return res.status(httpCode.CONFLICT).json({message: 'Cette adresse mail est deja utilise'})
+            }
+            const hashPassword = await bcrypt.hash(motDePasse, 10)
+
+            const newProcureur = await prisma.users.create({
+                data: {
+                    id: uuidv4(),
+                    nom, prenom, email, motDePasse:hashPassword, telephone, tribunal,
+                    role: role.toUpperCase()
+                }
+            })
+
+            return res.status(httpCode.CREATED).json({message: 'Procureur cree avec succes', newProcureur})
+
+
+        } catch (error) {
+            return res.status(httpCode.INTERNAL_SERVER_ERROR).json({ message: error.message });
+        }
+    },
+
+    updatePassword: async(req, res)=>{
+        try {
+            const {ancienMotDePasse, newMotDePasse} = req.body
+
+            if (!ancienMotDePasse || !newMotDePasse) {
+                return res.status(httpCode.BAD_REQUEST).json({message: 'Tous les champs sont requis'})
+            }
+            const user = await prisma.users.findUnique({where:{id: req.user.id}})
+            if (!user) {
+                return res.status(httpCode.NOT_FOUND).json({message: 'Utilisateur introuvable'})
+            }
+            const verifMotDePasse = await bcrypt.compare(ancienMotDePasse, user.motDePasse)
+            if (!verifMotDePasse) {
+                return res.status(httpCode.BAD_REQUEST).json({message: 'Ancien mot de passe incorrect'})
+            }
+
+            const hashNewPassord = await bcrypt.hash(newMotDePasse, 10)
+
+            await prisma.users.update({
+                where:{id: user.id},
+                data: {motDePasse: hashNewPassord}
+            })
+
+            return res.status(httpCode.OK).json({ message: 'Mot de passe mis à jour avec succès' });
+
+        } catch (error) {
+            return res.status(httpCode.INTERNAL_SERVER_ERROR).json({ message: error.message });
+        }
     }
+
+
 }
 
 

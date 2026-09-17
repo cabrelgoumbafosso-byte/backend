@@ -15,7 +15,7 @@ const limiter = rateLimit({
 
 //middleware
 app.use(express.json())
-app.use(morgan('tiny'))
+app.use(morgan('combined'))
 app.use(limiter)
 
 app.use('/uploads', express.static('uploads'))
