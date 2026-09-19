@@ -13,6 +13,8 @@ const patternDemande = {
     GET_DEMANDE_ID : '/:id',
 
     TRAITER_PAR_GREFFIER : '/:id/greffier',
+    TRAITER_PAR_PROCUREUR : '/:id/procureur',
+    TELECHARGER: '/:id/telecharger',
     REJETER_DEMANDE : '/:id/rejet'
 }
 
@@ -24,6 +26,10 @@ demandeRoute.get(patternDemande.ALLDEMANDE, authMiddleware, verifRole('GREFFIER'
 demandeRoute.get(patternDemande.GET_DEMANDE_ID, authMiddleware, verifRole('GREFFIER', 'PROCUREUR', 'ADMIN'), demandeControlleur.getDemandeById)
 
 demandeRoute.put(patternDemande.TRAITER_PAR_GREFFIER, authMiddleware, verifRole('GREFFIER'), demandeControlleur.traiterParGreeffier)
+demandeRoute.put(patternDemande.TRAITER_PAR_PROCUREUR, authMiddleware, verifRole('PROCUREUR'), demandeControlleur.traiterParProcureur)
+
+demandeRoute.get(patternDemande.TELECHARGER, authMiddleware, demandeControlleur.telechargerExtrait)
+
 demandeRoute.put(patternDemande.REJETER_DEMANDE, authMiddleware, verifRole('GREFFIER', 'PROCUREUR'), demandeControlleur.rejeterDemande)
 
 export default demandeRoute
