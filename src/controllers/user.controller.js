@@ -231,6 +231,34 @@ const userController = {
         } catch (error) {
             return res.status(httpCode.INTERNAL_SERVER_ERROR).json({ message: error.message });
         }
+    },
+
+    uploadSignatureCachet : async(req, res)=>{
+        try {
+            if (!req.files || (!req.files['signature'] && !req.files['cachet'])) {
+                return res.status(httpCode.BAD_REQUEST).json({message: 'Veuillez fournir votre cachet et votre signature'})
+            }
+            const dataMaj = {}
+            if (req.files['signature']) {
+                dataMaj.signatureUrl = req.files['signature'][0].path
+            } 
+             if (req.files['cachet']) {
+                dataMaj.cachetUrl = req.files['cachet'][0].path
+            } 
+            const user = await prisma.users.update({
+                where: {id: req.user.id},
+                data: dataMaj
+            })
+
+            return res.status(httpCode.OK).json({
+                message: 'Signature et Cachet bien enregistree',
+                signatureUrl: user.signatureUrl,
+                cachetUrl: user.cachetUrl
+            })
+
+        } catch (error) {
+             return res.status(httpCode.INTERNAL_SERVER_ERROR).json({ message: error.message });
+        }
     }
 
 

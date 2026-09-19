@@ -77,8 +77,8 @@ model Demande {
 
 
 
-     userId                   String
-     user                     Users @relation("Demandeur", fields: [userId], references: [id], onDelete:Cascade)
+     userId                   String?
+     user                     Users? @relation("Demandeur", fields: [userId], references: [id], onDelete:Cascade)
 
      greffierId               String?
      greffier                 Users? @relation("TraiteurGref", fields: [greffierId], references: [id])
@@ -89,7 +89,12 @@ model Demande {
      procureur                Users? @relation("TraiteurProcur", fields: [procureurId], references: [id])
      dateSignatureProcureur   DateTime?  
 
+     motifRejet               String?
+
      pieces                   PiecesJointes[] 
+
+     documentpdf              String?
+     dateDelivrance           DateTime?
 
      creatAt                  DateTime @default(now())
 }
