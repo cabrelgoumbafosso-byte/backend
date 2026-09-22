@@ -11,13 +11,13 @@ if (!fs.existsSync(OUTPUT_DIR)) {
 
 const embedImage = async (pdfDoc, url) => {
     const ext = path.extname(url).toLowerCase();
-    const bytes = fs.readFileSync(url);
+    const bytes = await fs.promises.readFile(url);
     return ext === '.png' ? pdfDoc.embedPng(bytes) : pdfDoc.embedJpg(bytes);
 };
 
 const pdfService = {
 
-    genererExtrait: async (demande, greffier, procureur) => {
+    genererExtrait: async (demande, greffier, procureur, condamnations) => {
         const pdfDoc = await PDFDocument.create();
         //ici c'est le format d'une image A4 le 595,842
         const page = pdfDoc.addPage([595, 842]); 
@@ -46,13 +46,28 @@ const pdfService = {
             page.drawText(ligne, { x: 60, y, size: 11, font });
             y -= 22;
         }
+         
+        if (condamnations.length === 0) {
+            page.drawText("Le présent bulletin ne mentionne aucune condamnation.", { x: 60, y, size: 11, font });
+            y -= 20;
+        } else{
+            page.drawText("Le présent bulletin mentionne la/les condamnation(s) suivante(s) :", { x: 60, y, size: 11, font: fontBold });
+            y -= 20;
+            for (const c of condamnations) {
+            page.drawText(
+                `- ${c.infraction}, ${c.tribunal}, le ${new Date(c.dateCondamnation).toLocaleDateString('fr-FR')} (${c.peine})`,
+                { x: 70, y, size: 10, font }
+            );
+            y -= 18;
+          }
+        }
 
-        y -= 20;
-        page.drawText("Le présent bulletin ne mentionne aucune condamnation.", { x: 60, y, size: 11, font });
+        // y -= 20;
+        // page.drawText("Le présent bulletin ne mentionne aucune condamnation.", { x: 60, y, size: 11, font });
 
         //gestion de la sugnature et du cahet
 
-        y = 180;
+        y = 100;
         if (greffier.signatureUrl) {
             const img = await embedImage(pdfDoc, greffier.signatureUrl);
             page.drawImage(img, { x: 60, y, width: 100, height: 50 });
@@ -77,7 +92,7 @@ const pdfService = {
 
         const pdfBytes = await pdfDoc.save();
         const filePath = path.join(OUTPUT_DIR, `${demande.numeroDemande}.pdf`);
-        fs.writeFileSync(filePath, pdfBytes);
+        await fs.promises.writeFile(filePath, pdfBytes);
 
         return filePath;
     }

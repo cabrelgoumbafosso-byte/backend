@@ -2,6 +2,8 @@ import prisma from "../lib/prisma.js";
 import { httpCode } from "../static/httpCode.js"
 import { v4 as uuidv4 } from "uuid";
 import pdfService from "../services/pdf.service.js";
+import path from "path";
+import { normaliserDate } from "./condamnation.controller.js";
 
 
 
@@ -36,7 +38,7 @@ const demandeControlleur = {
                 id: uuidv4(),
                 numeroDemande,
                 motif,
-                nom, prenom, dateNaisssance: new Date(dateNaissance), lieuNaissance, nomMere, nomPere, profession, situationMatrimonial, domicile, nationalite,
+                nom, prenom, dateNaisssance: normaliserDate(dateNaissance), lieuNaissance, nomMere, nomPere, profession, situationMatrimonial, domicile, nationalite,
                 userId: req.user.id,
 
                 pieces: {
@@ -128,15 +130,34 @@ const demandeControlleur = {
                 return res.status(httpCode.BAD_REQUEST).json({message: "Cette demande n'est pas au statut SOUMISE, elle a déjà été traitée ou rejetée"});
             }
 
+//ici on verifie si l'user qui fait la demande est deja enregistre dans le fichier de condamnation
+
+            const condamnationTrouvees = await prisma.condamnation.findMany({
+                where:{
+                    nom: demande.nom,
+                    prenom: demande.prenom,
+                    dateNaissance: demande.dateNaisssance
+                }
+            })
+
            const demandeTraitee =  await prisma.demande.update({
                 where: {id},
                 data: {
                     greffierId: req.user.id,
                     dateSignatureGreffier: new Date(),
-                    statutDemande: 'EN_ATTENTE_PROCUREUR'
+                    statutDemande: 'EN_ATTENTE_PROCUREUR',
+                    resultatRecherche: condamnationTrouvees.length > 0 ? 'CONDAMNATIONS_TROUVEES' : 'AUCUNE_CONDAMNATION',
+                    condamnationIds: condamnationTrouvees.map(c => c.id)
+                     
                 }
             })
-            return res.status(httpCode.OK).json({message: `Demande traite par le greffier Mr ${greffier.nom}. En attente du procurreur`, demandeTraitee})
+            return res.status(httpCode.OK).json({
+                message: `Demande traite par le greffier Mr ${greffier.nom}. En attente du procurreur`, 
+                resultatRecherche: demandeTraitee.resultatRecherche,
+                nombreCondamnations: condamnationTrouvees.length,
+                demandeTraitee
+            
+            })
 
             
         } catch (error) {
@@ -167,15 +188,25 @@ const demandeControlleur = {
                 }
 
                 const greffier = await prisma.users.findUnique({ where: { id: demande.greffierId } });
-                const documentUrl = await pdfService.genererExtrait(demande, greffier, procureur);
+
+//on recupere les condamnation avant de generer le pdf
+                const condamnations = demande.condamnationIds.length > 0 ? await prisma.condamnation.findMany({
+                    where: {id: {in: demande.condamnationIds}}
+                }) : []
+
+
+                const documentUrl = await pdfService.genererExtrait(demande, greffier, procureur, condamnations);
 
                 const demandeValidee = await prisma.demande.update({
                     where: { id },
                     data: {
-                        procureurId: req.user.id,
+                        procureur: {
+                            connect: {id: req.user.id}
+                        },
                         dateSignatureProcureur: new Date(),
+                        dateDelivrance: new Date(),
                         statutDemande: 'VALIDEE',
-                        documentUrl
+                        documentpdf: documentUrl
                     }
                 });
 
@@ -212,7 +243,7 @@ const demandeControlleur = {
                     });
                 }
 
-                return res.download(path.resolve(demande.documentUrl));
+                return res.download(path.resolve(demande.documentpdf));
 
             } catch (error) {
                 return res.status(httpCode.INTERNAL_SERVER_ERROR).json({ message: error.message });

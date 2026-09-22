@@ -44,16 +44,36 @@ model Users {
    role              Role @default(CITOYEN)
    refreshToken      String?
 
-   createdAt         DateTime @default(now())
+   createdAt          DateTime @default(now())
 
-   signatureUrl      String?
-   cachetUrl         String?
-   tribunal          String?
+   signatureUrl       String?
+   cachetUrl          String?
+   tribunal           String?
+   
 
 
    demandes          Demande[] @relation("Demandeur")
    demandesTraitees  Demande[] @relation("TraiteurGref")
    demandesTraiteesProc Demande[] @relation("TraiteurProcur")
+}
+
+model Condamnation{
+     id                 String @id @default(uuid()) @map("_id")
+     nom                String
+     prenom             String
+     dateNaissance      DateTime
+     lieuNaissance      String
+     nomPere            String
+     nomMere            String
+     infraction         String
+     tribunal           String
+     dateCondamnation   DateTime?
+     peine              String
+     signatureUrl       String?
+     cachetUrl          String?
+
+     createdAt         DateTime @default(now())
+
 }
 
 
@@ -92,6 +112,9 @@ model Demande {
      motifRejet               String?
 
      pieces                   PiecesJointes[] 
+
+     resultatRecherche        String? 
+     condamnationIds          String[]   @default([])
 
      documentpdf              String?
      dateDelivrance           DateTime?

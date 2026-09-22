@@ -3,6 +3,7 @@ import userRoute from './routes/user.route.js'
 import morgan from 'morgan'
 import rateLimit from 'express-rate-limit'
 import demandeRoute from './routes/demande.route.js'
+import condamnationRoute from './routes/condamnation.route.js'
 
 const app = express()
 
@@ -23,6 +24,7 @@ app.use('/uploads', express.static('uploads'))
 //routing
 app.use('/api/auth', userRoute)
 app.use('/api/demande', demandeRoute)
+app.use('/api/condamnation', condamnationRoute)
 
 
 
