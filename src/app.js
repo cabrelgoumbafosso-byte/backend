@@ -4,6 +4,7 @@ import morgan from 'morgan'
 import rateLimit from 'express-rate-limit'
 import demandeRoute from './routes/demande.route.js'
 import condamnationRoute from './routes/condamnation.route.js'
+import cors from 'cors'
 
 const app = express()
 
@@ -15,6 +16,7 @@ const limiter = rateLimit({
 
 
 //middleware
+app.use(cors())
 app.use(express.json())
 app.use(morgan('combined'))
 app.use(limiter)

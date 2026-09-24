@@ -4,6 +4,7 @@ import { v4 as uuidv4 } from "uuid";
 import pdfService from "../services/pdf.service.js";
 import path from "path";
 import { normaliserDate } from "./condamnation.controller.js";
+import emailService from "../services/email.service.js";
 
 
 
@@ -176,7 +177,10 @@ const demandeControlleur = {
                     });
                 }
 
-                const demande = await prisma.demande.findUnique({ where: { id } });
+                const demande = await prisma.demande.findUnique({
+                     where: { id },
+                     include: {user : true}
+                 });
                 if (!demande) {
                     return res.status(httpCode.NOT_FOUND).json({ message: 'Demande introuvable' });
                 }
@@ -209,6 +213,8 @@ const demandeControlleur = {
                         documentpdf: documentUrl
                     }
                 });
+
+                emailService.sendDemandeValidee(demande.user.email, demande.user.nom, demande.numeroDemande)
 
                 return res.status(httpCode.OK).json({ message: 'Demande validée, extrait généré', demandeValidee });
 
@@ -258,7 +264,10 @@ const demandeControlleur = {
             if (!motifRejet) {
                 return res.status(httpCode.BAD_REQUEST).json({message: 'Veuillez entrer le motif du rejet de la demande'})
             }
-            const demande = await prisma.demande.findUnique({where: {id}})
+            const demande = await prisma.demande.findUnique({
+                where: {id},
+                include: {user: true}
+            })
 
             if (!demande) {
                 return res.status(httpCode.NOT_FOUND).json({ message: 'Demande introuvable' });
@@ -268,13 +277,13 @@ const demandeControlleur = {
                 data: {statutDemande: 'REJETEE', motifRejet}
             })
 
+            emailService.sendDemandeRejetee(demande.user.email, demande.user.nom, demande.numeroDemande, motifRejet)
             return res.status(httpCode.OK).json({message: `Demande rejetee`, demandeRejetee})
             
         } catch (error) {
             return res.status(httpCode.INTERNAL_SERVER_ERROR).json({ message: error.message }); 
         }
     },
-
 }
 
 export default demandeControlleur
