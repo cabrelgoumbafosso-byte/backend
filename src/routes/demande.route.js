@@ -23,7 +23,7 @@ demandeRoute.post(patternDemande.CREATE, authMiddleware, upload.fields([{name: '
 demandeRoute.get(patternDemande.MyDEMANDE, authMiddleware, demandeControlleur.getMyDemande)
 
 demandeRoute.get(patternDemande.ALLDEMANDE, authMiddleware, verifRole('GREFFIER', 'PROCUREUR', 'ADMIN'), demandeControlleur.getAllDemande)
-demandeRoute.get(patternDemande.GET_DEMANDE_ID, authMiddleware, verifRole('GREFFIER', 'PROCUREUR', 'ADMIN'), demandeControlleur.getDemandeById)
+demandeRoute.get(patternDemande.GET_DEMANDE_ID, authMiddleware, verifRole('GREFFIER', 'PROCUREUR', 'ADMIN', 'CITOYEN'), demandeControlleur.getDemandeById)
 
 demandeRoute.put(patternDemande.TRAITER_PAR_GREFFIER, authMiddleware, verifRole('GREFFIER'), demandeControlleur.traiterParGreeffier)
 demandeRoute.put(patternDemande.TRAITER_PAR_PROCUREUR, authMiddleware, verifRole('PROCUREUR'), demandeControlleur.traiterParProcureur)

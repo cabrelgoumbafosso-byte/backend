@@ -11,6 +11,7 @@ const patternUsers = {
     SIGNUP: '/signup/user',
     LOGIN: '/login/user',
     REFRESH: '/refresh',
+    ALL: '/user/all',
 
 
     CREATE_GREFFIER: '/signup/greffier',
@@ -26,8 +27,9 @@ userRoute.post(patternUsers.LOGIN, userController.login)
 
 userRoute.post(patternUsers.CREATE_GREFFIER, authMiddleware, verifRole('ADMIN'), userController.createGreffier)
 userRoute.post(patternUsers.CREATE_PROCUREUR, authMiddleware, verifRole('ADMIN'), userController.createProcureur)
+userRoute.get(patternUsers.ALL, authMiddleware, verifRole('ADMIN'), userController.getUsers)
 
-userRoute.put(patternUsers.UPDATE_PASSWORD, authMiddleware, verifRole('GREFFIER', 'PROCUREUR'), userController.updatePassword)
+userRoute.put(patternUsers.UPDATE_PASSWORD, authMiddleware, verifRole('GREFFIER', 'PROCUREUR', 'CITOYEN'), userController.updatePassword)
 
 userRoute.post(
     patternUsers.UPLOAD_SIGNATURE, 
